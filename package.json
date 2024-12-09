@@ -1,0 +1,23 @@
+{
+	"name": "churchtools",
+	"version": "0.1.0",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/alexhor/companion-module-churchtools.git"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"@companion-module/base": "~1.11.2",
+		"got": "^14.4.5",
+		"tough-cookie": "^5.0.0"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^2.1.0"
+	},
+	"packageManager": "yarn@4.4.1"
+}

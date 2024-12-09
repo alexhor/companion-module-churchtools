@@ -1,0 +1,31 @@
+{
+	"id": "churchtools",
+	"name": "churchtools",
+	"shortname": "churchtools",
+	"description": "churchtools",
+	"version": "0.1.0",
+	"license": "MIT",
+	"repository": "git+https://github.com/alexhor/companion-module-churchtools.git",
+	"bugs": "https://github.com/alexhor/companion-module-churchtools/issues",
+	"maintainers": [
+		{
+			"name": "Alexander Dennenmoser",
+			"email": "alexander.dennenmoser@outlook.de"
+		}
+	],
+	"legacyIds": [],
+	"runtime": {
+		"type": "node18",
+		"api": "nodejs-ipc",
+		"apiVersion": "0.0.0",
+		"entrypoint": "../index.js"
+	},
+	"manufacturer": "Churchtools",
+	"products": [
+		"Churchtools"
+	],
+	"keywords": [
+		"Protocol",
+		"Churchtools"
+	]
+}
