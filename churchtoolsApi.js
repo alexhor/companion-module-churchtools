@@ -1,7 +1,7 @@
 import got from 'got'
 import {CookieJar} from 'tough-cookie'
 import { Event } from './event.js'
-import { Agenda, AgendaItem, AgendaLivePosition } from './agenda.js'
+import { Agenda, AgendaItem, AgendaLivePosition, Song } from './agenda.js'
 
 
 export class ChurchtoolsApi {
@@ -179,6 +179,54 @@ export class ChurchtoolsApi {
         return new Agenda(response["data"])
     }
 
+    async getAllSongs() {
+        /**
+         * Get all existing songs
+         * 
+         * Returns:
+         *     list[Song]: All existing songs
+         */
+        var response = await this.sendRequest('ChurchService', 'getAllSongs', {})
+        var songList = []
+        for (const [_, songData] of Object.entries(response["data"]["songs"])) {
+            songList.push(new Song(songData))
+        }
+        return songList
+    }
+
+    async getAllSongArrangements() {
+        /**
+         * Get all existing song arrangements
+         * 
+         * Returns:
+         *     dict[id, SongArrangement]: All existing song arrangements
+         */
+        var songList = await this.getAllSongs()
+        var songArrangements = {}
+        songList.forEach(song => {
+            song.arrangementList.forEach(arrangement => {
+                songArrangements[arrangement.id] = arrangement
+            })
+        })
+        return songArrangements
+    }
+
+    async _agendaItemsAddSongs(agenda) {
+        /**
+         * Add songs to all agenda song items
+         * 
+         * Args:
+         *     agenda (Agenda): Agenda to add the songs to
+         */
+        var songArrangementList = await this.getAllSongArrangements()
+        var agendaSongItemList = await agenda.getAllSongItems()
+        agendaSongItemList.forEach(songItem => {
+            if (songItem.arrangementId in songArrangementList) {
+                songItem.addSongArrangement(songArrangementList[songItem.arrangementId])
+            }
+        })
+    }
+
     async agendaAddItems(agenda) {
         /**
          * Add all items to an agenda
@@ -188,10 +236,14 @@ export class ChurchtoolsApi {
         **/
         var response = await this.sendRequest('ChurchService', 'loadAgendaItems', {agenda_id: agenda.id})
         for (const [_, itemData] of Object.entries(response["data"])) {
+            //TODO: add song(title)s via "arrangement_id" property of AgendaItem => all songs can be fetch via "getAllSongs" ajax function (no other parameters needed, but maybe try arrangement_id)
             var item = new AgendaItem(itemData)
             agenda.addItem(item)
         }
+
+        await this._agendaItemsAddSongs(agenda)
     }
+
 
     async getEventAgenda(event) {
         /**
@@ -230,11 +282,17 @@ export class ChurchtoolsApi {
          * Args:
          *     event (Event): The event the agenda belongs to
          *     agenda (Agenda): The agenda to advance
+         * 
+         * Returns:
+         *     AgendaLivePosition: New agenda live position
         **/
         this.logger.log("info", "Advancing live agenda position")
         var currentPosition = await this.getAgendaLivePosition(event, agenda)
-        if (agenda.getItemsLen() < currentPosition.positionId) return
-        await this.sendRequest('ChurchService', 'saveAgendaLivePosition', {event_id: event.id, pos_id: currentPosition.positionId + 1, addseconds: 0})
+        var nextPosition = currentPosition.getNextItem()
+        if (null == nextPosition) return
+        var nextPositionId = agenda.getPositionIdFromItemSortkey(nextPosition.sortkey)
+        await this.sendRequest('ChurchService', 'saveAgendaLivePosition', {event_id: event.id, pos_id: nextPositionId, addseconds: 0})
+        return AgendaLivePosition.getLiveAgendaPosition(agenda, nextPositionId)
     }
 
     async agendaLivePositionReverse(event, agenda) {
@@ -247,8 +305,11 @@ export class ChurchtoolsApi {
         **/
         this.logger.log("info", "Reversing live agenda position")
         var currentPosition = await this.getAgendaLivePosition(event, agenda)
-        if (0 == currentPosition.positionId) return
-        await this.sendRequest('ChurchService', 'saveAgendaLivePosition', {event_id: event.id, pos_id: currentPosition.positionId - 1, addseconds: 0})
+        var previousPosition = currentPosition.getPreviousItem()
+        if (null == previousPosition) return
+        var previousPositionId = agenda.getPositionIdFromItemSortkey(previousPosition.sortkey)
+        await this.sendRequest('ChurchService', 'saveAgendaLivePosition', {event_id: event.id, pos_id: previousPositionId, addseconds: 0})
+        return AgendaLivePosition.getLiveAgendaPosition(agenda, previousPositionId)
     }
 
     async agendaLivePositionAddTime(event, agenda, secondsToAdd=60) {
