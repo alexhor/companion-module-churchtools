@@ -26,6 +26,7 @@ class Churchtools extends InstanceBase {
 	}
 
 	async init(config) {
+		this._currentLivePosition = null
 		this._config = config
 		this.updateVariableDefinitions()
 
@@ -34,7 +35,7 @@ class Churchtools extends InstanceBase {
 		await this.reloadNextEvent()
 
 		this.updateActions()
-
+		this.__updateAgendaTimesTimeout = setInterval(this.updateAgendaTimes.bind(this), 1000)
 		this.updateStatus(InstanceStatus.Ok)
 	}
 
@@ -46,6 +47,7 @@ class Churchtools extends InstanceBase {
 
 	// When module gets deleted
 	async destroy() {
+		clearTimeout(this.__updateAgendaTimesTimeout)
 		await this._api.logout()
 	}
 
@@ -66,12 +68,14 @@ class Churchtools extends InstanceBase {
 		 * Returns:
 		 *     object: Values for the agenda live positions variables
 		 */
-		var currentLivePosition = await this._api.getAgendaLivePosition(this._event, this._agenda)
-		var previousItemName = currentLivePosition.getPreviousItem()
+		this._currentLivePosition = await this._api.getAgendaLivePosition(this._event, this._agenda)
+
+		// Get items
+		var previousItemName = this._currentLivePosition.getPreviousItem()
 		previousItemName = null == previousItemName ? "" : previousItemName.name
-		var currentItemName = currentLivePosition.getCurrentItem()
+		var currentItemName = this._currentLivePosition.getCurrentItem()
 		currentItemName = null == currentItemName ? "" : currentItemName.name
-		var nextItemName = currentLivePosition.getNextItem()
+		var nextItemName = this._currentLivePosition.getNextItem()
 		nextItemName = null == nextItemName ? "" : nextItemName.name
 		
 		return {
@@ -86,8 +90,6 @@ class Churchtools extends InstanceBase {
 		this._event = await this._api.getLatestEvent()
     	this._agenda = await this._api.getEventAgenda(this._event)
 		this.log("info", "Selected event \"" + this._agenda.name + "\"(ID: " + this._agenda.id + ") as next event")
-
-		///await this._api.sendRequest('ChurchService', 'saveAgendaLivePosition', {event_id: this._event.id, pos_id: 19, addseconds: 0})
 
 		var variables = await this._getAgendaLivePositionVariables()
 		variables.selectedEventName = this._event.name
@@ -120,11 +122,37 @@ class Churchtools extends InstanceBase {
 	async agendaItemAddTime(secondsToAdd) {
 		if (this._eventSelectedWarning()) return
 		await this._api.agendaLivePositionAddTime(this._event, this._agenda, secondsToAdd)
+		var variables = await this._getAgendaLivePositionVariables()
+		this.setVariableValues(variables)
 	}
 
 	async agendaItemReduceTime(secondsToReduce) {
 		if (this._eventSelectedWarning()) return
 		await this._api.agendaLivePositionReduceTime(this._event, this._agenda, secondsToReduce)
+		var variables = await this._getAgendaLivePositionVariables()
+		this.setVariableValues(variables)
+	}
+
+	updateAgendaTimes() {
+		/**
+		 * Update the agenda time variables
+		 */
+		if (null == this._currentLivePosition) return
+		// Calc time
+		var now = new Date()
+		var endTime = this._currentLivePosition.getEndTime()
+		var totalSecondsLeft = Math.floor(endTime.getTime() / 1000 - now.getTime() / 1000)
+		var minutesLeft = totalSecondsLeft > 0 ? Math.floor(totalSecondsLeft / 60) : 0
+		var secondsLeft = totalSecondsLeft > 0 ? totalSecondsLeft % 60 : 0
+		// Pad time
+		minutesLeft = (minutesLeft + "").padStart(2, "0")
+		secondsLeft = (secondsLeft + "").padStart(2, "0")
+		// Set variables
+		this.setVariableValues({
+			currentAgendaItemMinutesLeft: minutesLeft,
+			currentAgendaItemSecondsLeft: secondsLeft,
+			currentAgendaItemTimeLeft: minutesLeft + ":" + secondsLeft,
+		})
 	}
 }
 

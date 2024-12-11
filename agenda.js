@@ -43,6 +43,16 @@ export class AgendaItem {
         else return Number(this._data["arrangement_id"])
     }
 
+    get duration() {
+        /**
+         * Planned duration of the agenda item
+         * 
+         * Returns:
+         *     int: Planned duration in seconds
+         */
+        return Number(this._data["duration"])
+    }
+
     isHeader() {
         /**
          * Wether this item is a header
@@ -226,7 +236,6 @@ export class AgendaLivePosition {
         return this._agenda.getItemAtPosition(this.positionId)
     }
 
-
     getNextItem() {
         /**
          * Get the next live agenda item
@@ -235,6 +244,20 @@ export class AgendaLivePosition {
          *     AgendaItem|null: Next live agenda item or null if the current one is the last one
         **/
         return this._agenda.getItemAtPosition(this.positionId + 1)
+    }
+
+    getEndTime() {
+        /**
+         * Get time when this agenda live position will end (including addseconds)
+         * 
+         * Returns:
+         *     Date: Time when this agenda live position will end
+         */
+        var timezoneOffsetSeconds = (new Date()).getTimezoneOffset() * -60
+        var switchdateTimestampSeconds = (new Date(this._data["switchdate"])).getTime() / 1000
+        var endDate = new Date(1970, 0, 1)
+        endDate.setSeconds(switchdateTimestampSeconds + this.secondsToAdd + this.getCurrentItem().duration + timezoneOffsetSeconds)
+        return endDate
     }
 
     static getLiveAgendaPosition(agenda, positionId, secondsToAdd=0) {
