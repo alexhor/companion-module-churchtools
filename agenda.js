@@ -1,4 +1,4 @@
-export class AgendaItem {
+class AgendaItem {
     get id() {
         /**
          * Id of the agenda item
@@ -110,7 +110,7 @@ export class AgendaItem {
     }
 }
 
-export class Song {
+class Song {
     constructor(data) {
         this._data = data
     }
@@ -151,7 +151,7 @@ export class Song {
     }
 }
 
-export class SongArrangement {
+class SongArrangement {
     constructor(data, song) {
         this._data = data
         this._song = song
@@ -188,7 +188,7 @@ export class SongArrangement {
     }
 }
 
-export class AgendaLivePosition {
+class AgendaLivePosition {
     get positionId() {
         /**
          * Get the position id of the current item
@@ -265,7 +265,7 @@ export class AgendaLivePosition {
     }
 }
 
-export class Agenda {
+class Agenda {
     get id() {
         /**
          * Id of the agenda item
@@ -407,3 +407,10 @@ export class Agenda {
     }
 }
 
+export {
+    AgendaItem,
+    Song,
+    SongArrangement,
+    AgendaLivePosition,
+    Agenda,
+}
