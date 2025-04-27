@@ -21,22 +21,25 @@ class Churchtools extends InstanceBase {
 		await this._api.login()
 		await this.reloadNextEvent()
 
-		this.updateActions()
 		this.updateVariableDefinitions()
+		this.updateActions()
 	}
 
 	async init(config) {
 		this._currentLivePosition = null
 		this._config = config
+
 		this.updateVariableDefinitions()
+		this.updateActions()
 
 		this._api = new ChurchtoolsApi(this._config.instanceUrl, this._config.userId, this._config.token, this)
 		await this._api.login()
 		await this.reloadNextEvent()
 
-		this.updateActions()
 		this.__updateAgendaTimesTimeout = setInterval(this.updateAgendaTimes.bind(this), 1000)
+
 		this.updateStatus(InstanceStatus.Ok)
+
 	}
 
 
@@ -141,6 +144,8 @@ class Churchtools extends InstanceBase {
 		// Calc time
 		var now = new Date()
 		var endTime = this._currentLivePosition.getEndTime()
+		var endTimestamp = Math.floor(endTime.getTime() / 1000)
+
 		var totalSecondsLeft = Math.floor(endTime.getTime() / 1000 - now.getTime() / 1000)
 		var minutesLeft = totalSecondsLeft > 0 ? Math.floor(totalSecondsLeft / 60) : 0
 		var secondsLeft = totalSecondsLeft > 0 ? totalSecondsLeft % 60 : 0
@@ -152,6 +157,7 @@ class Churchtools extends InstanceBase {
 			currentAgendaItemMinutesLeft: minutesLeft,
 			currentAgendaItemSecondsLeft: secondsLeft,
 			currentAgendaItemTimeLeft: minutesLeft + ":" + secondsLeft,
+			currentAgendaItemEndTimestamp: endTimestamp,
 		})
 	}
 }

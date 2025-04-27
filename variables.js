@@ -8,5 +8,6 @@ export function UpdateVariables(self) {
         { variableId: 'currentAgendaItemMinutesLeft', name: 'Current agenda item minutes left' },
         { variableId: 'currentAgendaItemSecondsLeft', name: 'Current agenda item seconds left' },
         { variableId: 'currentAgendaItemTimeLeft', name: 'Current agenda item time left' },
+        { variableId: 'currentAgendaItemEndTimestamp', name: 'Current agenda item end timestamp' },
     ])
 }
